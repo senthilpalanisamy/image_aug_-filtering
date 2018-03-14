@@ -11,14 +11,15 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras import backend as K
 import json
 import shutil
+import itertools
 
 #Salt and Pepper Noise
 
-def salt_and_pepper_noise(image ,probability = 0.5 , magnitude = 0.004):
+def salt_and_pepper_noise(image , probability = 0.5 , magnitude = 0.004):
 
 	#generating a random number for checking the probability
 
-	if (probability < random.random()):
+	if (probability > random.random()):
 
 		row,col,ch = image.shape
 		
@@ -61,7 +62,7 @@ def vignetting(img , probability = 0.5 , px = 0.25 , py = 0.25):
 	
 	#generating a random number for checking the probability
 
-	if (probability < random.random()):
+	if (probability > random.random()):
 
 		rows, cols = img.shape[:2]
 		
@@ -126,53 +127,7 @@ def color_shift(img_process , probability = 0.5 , color_shift_range = 50):
 
 	return images
 
-#Naming conventions
-
-def naming(data , agu_index):
-	
-	#names
-
-	names_style = [
-		
-		"f_l_r",	#flip_left_right
-		
-		"f_r",		#flip_random
-		
-		"f_t_b",	#flip_top_bottom
-		
-		"g_d",		#gaussian_distortion
-		
-		"r_d",		#random_distortion
-		
-		"r_e",		#random_erasing
-		
-		"r_w_c",	#rotate_without_crop
-		
-		"sh",		#shear
-		
-		"sk",		#skew
-		
-		"sk_c",		#skew_corner
-		
-		"sk_l_r",	#skew_left_right
-		
-		"sk_t",		#skew_tilt
-		
-		"sk_t_b",	#skew_top_bottom
-		
-		"z",		#zoom
-		
-		"z_r",		#zoom_random
-		
-		"v",		#vignetting
-		
-		"s_a_p_n",	#salt_and_pepper_noise
-		
-		"c_s",		#color_shift
-		
-		] 
-
-	#which func to be enabled
+def possible_functions(data) :
 
 	enables = [
 
@@ -214,231 +169,245 @@ def naming(data , agu_index):
 
 		]
 
-	possible_name = []
+	probabilities = [
 
-	#generating the possible names
+		data["flip_left_right"]["probability"],
 
-	for item , enable in zip(names_style , enables):
+		data["flip_random"]["probability"],
+
+		data["flip_top_bottom"]["probability"],
+
+		data["gaussian_distortion"]["probability"],
+
+		data["random_distortion"]["probability"],
+
+		data["random_erasing"]["probability"],
+
+		data["rotate_without_crop"]["probability"],
+
+		data["shear"]["probability"],
+
+		data["skew"]["probability"],
+
+		data["skew_corner"]["probability"],
+
+		data["skew_left_right"]["probability"],
+
+		data["skew_tilt"]["probability"],
+
+		data["skew_top_bottom"]["probability"],
+
+		data["zoom"]["probability"],
+
+		data["zoom_random"]["probability"],
+
+		data["vignetting"]["probability"],
+
+		data["salt_and_pepper_noise"]["probability"],
+
+		data["color_shift"]["probability"]
+
+		]
+
+	functions = [
+		
+		"flip_left_right",
+		
+		"flip_random",
+		
+		"flip_top_bottom",
+		
+		"gaussian_distortion",
+		
+		"random_distortion",
+		
+		"random_erasing",
+		
+		"rotate_without_crop",
+		
+		"shear",
+		
+		"skew",	
+		
+		"skew_corner",
+		
+		"skew_left_right",
+		
+		"skew_tilt",
+		
+		"skew_top_bottom",
+		
+		"zoom",	
+		
+		"zoom_random",
+		
+		"vignetting",
+		
+		"salt_and_pepper_noise",
+		
+		"color_shift",
+		
+		]
+
+	possible = []
+
+	probability = []
+
+	for item , pro , enable in zip(functions , probabilities , enables):
 
 		if enable :
 
-			possible_name.append(item)
+			possible.append(item)
 
-	names = []
+			probability.append(pro)
 
-	#selecting the proper names
+	pro_sum = sum(probability)
 
-	for index in agu_index :
+	cal_probability = map(lambda x : x / pro_sum , probability)
 
-		names.append(names_style[index])
-
-	name = "__".join(names)
-
-	return name
+	return possible , cal_probability
 
 #Functions Selection 
 
-def function_selection(data , length):
+def function_selection(data , image_no):
 
 	p = Augmentor.Pipeline("./test")
 
-	agu_index1 = sorted(random.sample(range(0, length), data["no_of_agu"]))
+	possible , probability = possible_functions(data)
 
-	name = naming(data, agu_index1)
+	ran = random.randint(1 , data["no_of_agu"])
 
-	agu_index1.append(0)
+	possible = list(possible)
 
-	i = 0
+	probability = list(probability)
 
-	j = 0
+	sel_fun = np.random.choice(possible , ran , replace = False , p = probability)
 
-	agu1 = []
+	names = [image_no]
 
-	agu2 = []
+	if "flip_left_right" in sel_fun :
 
-	if data["flip_left_right"]["enable"] and agu_index1[i] == j :
+		p.flip_left_right(probability = 1)
 
-		p.flip_left_right(probability = data["flip_left_right"]["probability"])
+		names.append("f_l_r")
 
-		i = i + 1
+	if "flip_random" in sel_fun :
 
-	else:
+		p.flip_random(probability = 1)
 
-		j = j + 1
+		names.append("f_r")
 
-	if data["flip_random"]["enable"] and agu_index1[i] == j :
+	if "flip_top_bottom" in sel_fun :
 
-		p.flip_random(probability = data["flip_random"]["probability"])
+		p.flip_top_bottom(probability = 1)
 
-		i = i + 1
+		names.append("f_t_b")
 
-	if data["flip_top_bottom"]["enable"] and agu_index1[i] == j:
+	if "gaussian_distortion" in sel_fun :
 
-		p.flip_top_bottom(probability = data["flip_top_bottom"]["probability"])
+		p.gaussian_distortion(probability = 1 , grid_width = data["gaussian_distortion"]["grid_width"] , grid_height = data["gaussian_distortion"]["grid_height"] , magnitude = data["gaussian_distortion"]["magnitude"] , corner= "bell" , method = "in" , mex = 0.5 , mey = 0.5 , sdx = 0.05 , sdy = 0.05)
 
-		i = i + 1
+		names.append("g_d")
 
-	else:
+	if "random_distortion" in sel_fun :
 
-		j = j + 1
+		p.random_distortion(probability = 1  , grid_width = data["random_distortion"]["grid_width"] , grid_height = data["random_distortion"]["grid_height"] , magnitude = data["random_distortion"]["magnitude"]) 
 
-	if data["gaussian_distortion"]["enable"] and agu_index1[i] == j:
+		names.append("r_d")
 
-		p.gaussian_distortion(probability = data["gaussian_distortion"]["probability"] , grid_width = data["gaussian_distortion"]["grid_width"] , grid_height = data["gaussian_distortion"]["grid_height"] , magnitude = data["gaussian_distortion"]["magnitude"] , corner= "bell" , method = "in" , mex = 0.5 , mey = 0.5 , sdx = 0.05 , sdy = 0.05)
+	if "random_erasing" in sel_fun :
 
-		i = i + 1
+		p.random_erasing (probability = 1 , rectangle_area = data["random_erasing"]["rectangle_area"] )
 
-	else:
+		names.append("r_e")
 
-		j = j + 1
-		
-	if data["random_distortion"]["enable"] and agu_index1[i] == j:
+	if "rotate_without_crop" in sel_fun :
 
-		p.random_distortion(probability = data["random_distortion"]["probability"]  , grid_width = data["random_distortion"]["grid_width"] , grid_height = data["random_distortion"]["grid_height"] , magnitude = data["random_distortion"]["magnitude"]) 
+		p.rotate_without_crop(probability = 1 , max_left_rotation = data["rotate_without_crop"]["max_left_rotation"] , max_right_rotation = data["rotate_without_crop"]["max_right_rotation"], expand=False) 
 
-		i = i + 1
+		names.append("r_w_c")
 
-	else:
+	if "shear" in sel_fun :
 
-		j = j + 1
-		
-	if data["random_erasing"]["enable"] and agu_index1[i] == j:
+		p.shear (probability = 1 , max_shear_left = data["shear"]["max_shear_left"] , max_shear_right = data["shear"]["max_shear_right"])
 
-		p.random_erasing (probability = data["random_erasing"]["probability"] , rectangle_area = data["random_erasing"]["rectangle_area"] ) 
+		names.append("sh")
 
-		i = i + 1
+	if "skew" in sel_fun :
 
-	else:
+		p.skew (probability = 1 , magnitude = data["skew"]["magnitude"]) 
 
-		j = j + 1
-		
-	if data["rotate_without_crop"]["enable"] and agu_index1[i] == j:
+		names.append("sk")
 
-		p.rotate_without_crop(probability = data["rotate_without_crop"]["probability"] , max_left_rotation = data["rotate_without_crop"]["max_left_rotation"] , max_right_rotation = data["rotate_without_crop"]["max_right_rotation"], expand=False) 
+	if "skew_corner" in sel_fun :
 
-		i = i + 1
+		p.skew_corner (probability = 1 , magnitude = data["skew_corner"]["magnitude"])
 
-	else:
+		names.append("sk_c")
 
-		j = j + 1
-		
-	if data["shear"]["enable"] and agu_index1[i] == j:
+	if "skew_left_right" in sel_fun :
 
-		p.shear (probability = data["shear"]["probability"] , max_shear_left = data["shear"]["max_shear_left"] , max_shear_right = data["shear"]["max_shear_right"])
+		p.skew_left_right (probability = 1 , magnitude = data["skew_left_right"]["magnitude"])
 
-		i = i + 1
+		names.append("sk_l_r")
 
-	else:
+	if "skew_tilt" in sel_fun :
 
-		j = j + 1
-		
-	if data["skew"]["enable"] and agu_index1[i] == j:
+		p.skew_tilt (probability = 1 , magnitude = data["skew_tilt"]["magnitude"])
 
-		p.skew (probability = data["skew"]["probability"] , magnitude = data["skew"]["magnitude"]) 
+		names.append("sk_t")
 
-		i = i + 1
+	if "skew_top_bottom" in sel_fun :
 
-	else:
+		p.skew_top_bottom (probability = 1 , magnitude = data["skew_top_bottom"]["magnitude"] )
 
-		j = j + 1
-		
-	if data["skew_corner"]["enable"] and agu_index1[i] == j:
+		names.append("sk_t_b")
 
-		p.skew_corner (probability = data["skew_corner"]["probability"] , magnitude = data["skew_corner"]["magnitude"])
+	if "zoom" in sel_fun :
 
-		i = i + 1
+		p.zoom(probability = 1 , min_factor = data["zoom"]["min_factor"] , max_factor = data["zoom"]["max_factor"])
 
-	else:
+		names.append("z")
 
-		j = j + 1
-		
-	if data["skew_left_right"]["enable"] and agu_index1[i] == j:
+	if "zoom_random" in sel_fun :
 
-		p.skew_left_right (probability = data["skew_left_right"]["probability"] , magnitude = data["skew_left_right"]["magnitude"])
+		p.zoom_random (probability = 1 , percentage_area = data["zoom_random"]["percentage_area"] , randomise_percentage_area = False)
 
-		i = i + 1
+		names.append("z_r")
 
-	else:
-
-		j = j + 1
-		
-	if data["skew_tilt"]["enable"] and agu_index1[i] == j:
-
-		p.skew_tilt (probability = data["skew_tilt"]["probability"] , magnitude = data["skew_tilt"]["magnitude"])
-
-		i = i + 1
-
-	else:
-
-		j = j + 1
-		
-	if data["skew_top_bottom"]["enable"] and agu_index1[i] == j:
-
-		p.skew_top_bottom (probability = data["skew_top_bottom"]["probability"] , magnitude = data["skew_top_bottom"]["magnitude"] )
-
-		i = i + 1
-
-	else:
-
-		j = j + 1
-		
-	if data["zoom"]["enable"] and agu_index1[i] == j:
-
-		p.zoom(probability = data["zoom"]["probability"] , min_factor = data["zoom"]["min_factor"] , max_factor = data["zoom"]["max_factor"])
-
-		i = i + 1
-
-	else:
-
-		j = j + 1
-		
-	if data["zoom_random"]["enable"] and agu_index1[i] == j:
-
-		p.zoom_random (probability = data["zoom_random"]["probability"] , percentage_area = data["zoom_random"]["percentage_area"] , randomise_percentage_area = False)
-
-		i = i + 1
-
-	else:
-
-		j = j + 1
-		
 	batch_images = p.keras_generator(batch_size = 1, scaled = True, image_data_format = u'channels_last')
 	
 	batch_images1, labels = next(batch_images)
 	
 	batch_images1 = batch_images1[0] * 255 
 
-	if data["vignetting"]["enable"] and agu_index1[i] == j:
+	if "vignetting" in sel_fun :
 
-		batch_images1 = vignetting(batch_images1 , probability = data["vignetting"]["probability"] , px = data["vignetting"]["px"] , py = data["vignetting"]["py"])
+		batch_images1 = vignetting(batch_images1 , probability = 1 , px = data["vignetting"]["px"] , py = data["vignetting"]["py"])
+
+		names.append("v")
 		
-		i = i + 1
+	if "salt_and_pepper_noise" in sel_fun :
 
-	else:
+		batch_images1 = salt_and_pepper_noise(batch_images1 , probability = 1 , magnitude = data["salt_and_pepper_noise"]["magnitude"])
 
-		j = j + 1
-		
-	if data["salt_and_pepper_noise"]["enable"] and agu_index1[i] == j:
+		names.append("s_a_p_n")
 
-		batch_images1 = salt_and_pepper_noise(batch_images1 , probability = data["salt_and_pepper_noise"]["probability"] , magnitude = data["salt_and_pepper_noise"]["magnitude"])
+	if "color_shift" in sel_fun :
 
-		i = i + 1
+		batch_images1 = color_shift(batch_images1 , probability = 1 , color_shift_range = data["color_shift"]["color_shift_range"])
 
-	else:
-
-		j = j + 1
-		
-	if data["color_shift"]["enable"] and agu_index1[i] == j:
-
-		batch_images1 = color_shift(batch_images1 , probability = data["color_shift"]["probability"] , color_shift_range = data["color_shift"]["color_shift_range"])
+		names.append("c_s")
 
 	image = np.array(batch_images1, dtype= 'uint8')
 
 	image = cv2.cvtColor(image , cv2.COLOR_RGB2BGR)
 
+	name = "__".join(names)
+
 	return image , name
 
-def agu_img(image , json_file_path , batch_size ) :
+def agu_img(image , json_file_path , batch_size = 100 ,image_no = "1") :
 
 	if not os.path.isdir("./test"):
 
@@ -452,54 +421,13 @@ def agu_img(image , json_file_path , batch_size ) :
 		
 		json_file.close()
 
-	enables = [
-
-		data["flip_left_right"]["enable"],
-
-		data["flip_random"]["enable"],
-
-		data["flip_top_bottom"]["enable"],
-
-		data["gaussian_distortion"]["enable"],
-
-		data["random_distortion"]["enable"],
-
-		data["random_erasing"]["enable"],
-
-		data["rotate_without_crop"]["enable"],
-
-		data["shear"]["enable"],
-
-		data["skew"]["enable"],
-
-		data["skew_corner"]["enable"],
-
-		data["skew_left_right"]["enable"],
-
-		data["skew_tilt"]["enable"],
-
-		data["skew_top_bottom"]["enable"],
-
-		data["zoom"]["enable"],
-
-		data["zoom_random"]["enable"],
-
-		data["vignetting"]["enable"],
-
-		data["salt_and_pepper_noise"]["enable"],
-
-		data["color_shift"]["enable"]
-
-		]
-	length = enables.count(True)
-
 	processed = []
 	
 	names =[]
 
 	for x in range(batch_size):
 
-		image , name = function_selection(data , length)
+		image , name = function_selection(data , image_no)
 
 		names.append(name)
 		
@@ -523,19 +451,28 @@ def agu_mul_img(images , json_file_path , total_batch_size) :
 	
 	batch_images = []
 	
-	batch_names = []
+	batch_names = [] 
+
+	image_no = 1
 
 	for image , batch_size in zip(images , batch_sizes):
 
-		processed , names = agu_img( image , json_file_path ,batch_size)
+		processed , names = agu_img( image , json_file_path ,batch_size , image_no = str(image_no))
+
+		image_no = image_no + 1
 
 		batch_images.append(processed)
 	
 		batch_names.append(names)
-	
-	return batch_images , batch_names
+
+	processed_img = [img for batch in batch_images for img in batch]
+
+	processed_nam = [nam for batch in batch_names for nam in batch]
+
+	return processed_img , processed_nam
 
 json_file_path = "./data.json"
+
 '''
 batch_size = 200
 
@@ -549,6 +486,7 @@ for x , image in enumerate(processed) :
 	
 	cv2.imwrite('./output/%s%s.png'%(x , names[x]),image)
 '''
+
 dir_path = "./images"
 
 path_images = [os.path.join(dir_path , f) for f in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path , f))]
@@ -560,17 +498,9 @@ images = []
 for path in path_images :
 
 	images.append(cv2.imread(path))
-'''
-for image in images:
 
-	cv2.imshow('img',image)
-
-	cv2.waitKey()
-'''
 batch_images , batch_names = agu_mul_img(images , json_file_path , total_batch_size)
 
-for x , processed in enumerate(batch_images) :
+for x , image  in enumerate(batch_images) :
 
-	for y , image in enumerate(processed) :
-
-		cv2.imwrite('./output/%s_%s_%s.png'%(x , y , batch_names[x][y]) , image)
+	cv2.imwrite('./output/img%s__%s.png'%(batch_names[x] , x) , image)

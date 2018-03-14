@@ -16,9 +16,6 @@
 	"rotate_without_crop" : { "probability" : 0.1 , "max_left_rotation" : 15 , 
 	"max_right_rotation" : 15 , "enable" : true },
 	
-	"rotate_without_crop" : { "probability" : 0.1 , "max_left_rotation" : 15 , 
-	"max_right_rotation" : 15 , "enable" : true },
-
 	"shear" : { "probability" : 0.5 , "max_shear_left" : 25 , "max_shear_right" : 25 , 
 	"enable" : true },
 
