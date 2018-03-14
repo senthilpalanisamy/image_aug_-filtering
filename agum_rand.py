@@ -88,15 +88,113 @@ def color_shift(img_process , probability = 0.5 , color_shift_range = 50):
 
 	return images
 
-def agu_img(image , json_file_path ,batch_size ) :
+def naming(data , agu_index):
+	
+	names_style = [
+		
+		"f_l_r",	#flip_left_right
+		
+		"f_r",		#flip_random
+		
+		"f_t_p",	#flip_top_bottom
+		
+		"g_d",		#gaussian_distortion
+		
+		"r_d",		#random_distortion
+		
+		"r_e",		#random_erasing
+		
+		"r_w_c",	#rotate_without_crop
+		
+		"sh",		#shear
+		
+		"sk",		#skew
+		
+		"sk_c",		#skew_corner
+		
+		"sk_l_r",	#skew_left_right
+		
+		"sk_t",		#skew_tilt
+		
+		"sk_t_b",	#skew_top_bottom
+		
+		"z",		#zoom
+		
+		"z_r",		#zoom_random
+		
+		"v",		#vignetting
+		
+		"s_a_p_n",	#salt_and_pepper_noise
+		
+		"c_s",		#color_shift
+		
+		] 
+
+	enables = [
+
+		data["flip_left_right"]["enable"],
+
+		data["flip_random"]["enable"],
+
+		data["flip_top_bottom"]["enable"],
+
+		data["gaussian_distortion"]["enable"],
+
+		data["random_distortion"]["enable"],
+
+		data["random_erasing"]["enable"],
+
+		data["rotate_without_crop"]["enable"],
+
+		data["shear"]["enable"],
+
+		data["skew"]["enable"],
+
+		data["skew_corner"]["enable"],
+
+		data["skew_left_right"]["enable"],
+
+		data["skew_tilt"]["enable"],
+
+		data["skew_top_bottom"]["enable"],
+
+		data["zoom"]["enable"],
+
+		data["zoom_random"]["enable"],
+
+		data["vignetting"]["enable"],
+
+		data["salt_and_pepper_noise"]["enable"],
+
+		data["color_shift"]["enable"]
+
+		]
+
+	possible_name = []
+
+	for item , enable in zip(names_style , enables):
+
+		if enable :
+
+			possible_name.append(item)
+
+	names = []
+
+	for index in agu_index :
+
+		names.append(names_style[index])
+
+	name = "__".join(names)
+
+	return name
+
+def agu_img(image , json_file_path , batch_size ) :
 
 	if not os.path.isdir("./test"):
 
 		os.mkdir("./test")
 
-	img = cv2.imread(image)
-
-	cv2.imwrite("./test/image.png",img)	
+	cv2.imwrite("./test/image.png",image)	
 
 	with open(json_file_path,'r') as json_file:
 		
@@ -106,32 +204,7 @@ def agu_img(image , json_file_path ,batch_size ) :
 	first_time = True
 
 	processed = []
-
-	names_style = [
-		"f_l_r",	#flip_left_right
-
-		"f_r",		#flip_random
-
-		"f_t_p",	#flip_top_bottom
-
-		"g_d",		#gaussian_distortion
-
-		"r_d",		#random_distortion
-
-		"r_e",		#random_erasing
-
-		"r_w_c",	#rotate_without_crop
-
-		"sh",		#shear
-
-		"sk",		#skew
-
-		"sk_c",		#skew_corner
-
-		"sk_l_r",	#skew_left_right
-
-		"sk_t",
-		] 
+	names =[]
 
 	for x in range(batch_size):
 	
@@ -228,6 +301,8 @@ def agu_img(image , json_file_path ,batch_size ) :
 					agu1.append(item)
 	
 		agu_index1 = sorted(random.sample(range(0,length) , data["no_of_agu"]))
+
+		names.append(naming(data , agu_index1))	#nm ch
 		
 		agu_index2 = []
 	
@@ -275,14 +350,54 @@ def agu_img(image , json_file_path ,batch_size ) :
 
 	shutil.rmtree("./test", ignore_errors=True)
 
-	return processed
-		
-json_file_path = "/home/guru/Desktop/work/projects/image_aug_-filtering/data.json"
-image = "/home/guru/Desktop/work/projects/image_aug_-filtering/download.jpeg"
-batch_size = 200
+	return processed ,names 	#nm ch
 
-processed = agu_img( image , json_file_path ,batch_size )
+def agu_mul_img(images , json_file_path , total_batch_size) :
+
+	com = total_batch_size // len(images)
+	rem = total_batch_size % len(images)
+	batch_sizes = [com]*len(images)
+	batch_sizes[0 : (rem-1)] = [com + 1] * rem 
+	batch_images = []
+	batch_names = []
+
+	for image , batch_size in zip(images , batch_sizes):
+
+		processed , names = agu_img( image , json_file_path ,batch_size)
+
+		batch_images.append(processed)
+		batch_names.append(names)
+
+	return batch_images , batch_names
+
+json_file_path = "/home/guru/Desktop/work/projects/image_aug_-filtering/data.json"
+'''batch_size = 200
+img = "./download.jpeg"
+image = cv2.imread(img)
+processed , names = agu_img( image , json_file_path ,batch_size ) #nm ch
 
 for x , image in enumerate(processed) :
 	
-	cv2.imwrite('./output/img%s.png'%x,image)
+	cv2.imwrite('./output/%s%s.png'%(x , names[x]),image)
+'''
+dir_path = "/home/guru/Desktop/work/projects/image_aug_-filtering/images"
+
+path_images = [os.path.join(dir_path , f) for f in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path , f))]
+total_batch_size = 200
+images = []
+
+for path in path_images :
+
+	images.append(cv2.imread(path))
+'''
+for image in images:
+	cv2.imshow('img',image)
+	cv2.waitKey()
+'''
+batch_images , batch_names = agu_mul_img(images , json_file_path , total_batch_size)
+
+for x , processed in enumerate(batch_images) :
+
+	for y , image in enumerate(processed) :
+
+		cv2.imwrite('./output/%s_%s_%s.png'%(x , y , batch_names[x][y]) , image)
