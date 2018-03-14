@@ -11,7 +11,7 @@
 	
 	"random_distortion": { "probability" : 0.5 , "grid_width" : 5 , "grid_height" : 5 , 		"magnitude" : 10 , "enable" : true },
 
-	"random_erasing" : {"probability" : 0.5 , "rectangle_area" : 0.15 , "enable" : false },
+	"random_erasing" : {"probability" : 0.5 , "rectangle_area" : 0.15 , "enable" : true },
 
 	"rotate_without_crop" : { "probability" : 0.1 , "max_left_rotation" : 15 , 
 	"max_right_rotation" : 15 , "enable" : true },
