@@ -10,7 +10,7 @@ import random
 from keras.preprocessing.image import ImageDataGenerator
 from keras import backend as K
 import json
-#import shutil
+import shutil
 
 def salt_and_pepper_noise(image ,probability = 0.5 , magnitude = 0.004):
 
@@ -64,7 +64,6 @@ def vignetting(img , probability = 0.5 , px = 0.25 , py = 0.25):
 	
 	return v_img
 
-
 def color_shift(img_process , probability = 0.5 , color_shift_range = 50):
 
 	gen = ImageDataGenerator(
@@ -92,66 +91,149 @@ def color_shift(img_process , probability = 0.5 , color_shift_range = 50):
 def agu_img(image , json_file_path ,batch_size ) :
 
 	if not os.path.isdir("./test"):
+
 		os.mkdir("./test")
+
 	img = cv2.imread(image)
+
 	cv2.imwrite("./test/image.png",img)	
 
 	with open(json_file_path,'r') as json_file:
 		
 		data = json.load(json_file)
 		json_file.close()
+
+	first_time = True
+
 	processed = []
+
+	names_style = [
+		"f_l_r",	#flip_left_right
+
+		"f_r",		#flip_random
+
+		"f_t_p",	#flip_top_bottom
+
+		"g_d",		#gaussian_distortion
+
+		"r_d",		#random_distortion
+
+		"r_e",		#random_erasing
+
+		"r_w_c",	#rotate_without_crop
+
+		"sh",		#shear
+
+		"sk",		#skew
+
+		"sk_c",		#skew_corner
+
+		"sk_l_r",	#skew_left_right
+
+		"sk_t",
+		] 
 
 	for x in range(batch_size):
 	
 		p = Augmentor.Pipeline("./test")
+		
+		if first_time :
+
+			agu1_1 = [
+
+				p.flip_left_right(probability = data["flip_left_right"]["probability"]),
+				
+				p.flip_random(probability = data["flip_random"]["probability"]),
+				
+				p.flip_top_bottom(probability = data["flip_top_bottom"]["probability"]), 
+				
+				p.gaussian_distortion(probability = data["gaussian_distortion"]["probability"] , grid_width = data["gaussian_distortion"]["grid_width"] , grid_height = data["gaussian_distortion"]["grid_height"] , magnitude = data["gaussian_distortion"]["magnitude"] , corner= "bell" , method = "in" , mex = 0.5 , mey = 0.5 , sdx = 0.05 , sdy = 0.05) ,
+				
+				p.random_distortion(probability = data["random_distortion"]["probability"]  , grid_width = data["random_distortion"]["grid_width"] , grid_height = data["random_distortion"]["grid_height"] , magnitude = data["random_distortion"]["magnitude"]) ,
+				
+				p.random_erasing (probability = data["random_erasing"]["probability"] , rectangle_area = data["random_erasing"]["rectangle_area"] ) ,
+				
+				p.rotate_without_crop(probability = data["rotate_without_crop"]["probability"] , max_left_rotation = data["rotate_without_crop"]["max_left_rotation"] , max_right_rotation = data["rotate_without_crop"]["max_right_rotation"], expand=False) ,
+				
+				p.shear (probability = data["shear"]["probability"] , max_shear_left = data["shear"]["max_shear_left"] , max_shear_right = data["shear"]["max_shear_right"]) ,
+				
+				p.skew (probability = data["skew"]["probability"] , magnitude = data["skew"]["magnitude"]) ,
+				
+				p.skew_corner (probability = data["skew_corner"]["probability"] , magnitude = data["skew_corner"]["magnitude"]) ,
+				
+				p.skew_left_right (probability = data["skew_left_right"]["probability"] , magnitude = data["skew_left_right"]["magnitude"]) ,
+				
+				p.skew_tilt (probability = data["skew_tilt"]["probability"] , magnitude = data["skew_tilt"]["magnitude"]) ,
+				
+				p.skew_top_bottom (probability = data["skew_top_bottom"]["probability"] , magnitude = data["skew_top_bottom"]["magnitude"] ) ,
+				
+				p.zoom(probability = data["zoom"]["probability"] , min_factor = data["zoom"]["min_factor"] , max_factor = data["zoom"]["max_factor"]) ,
+				
+				p.zoom_random (probability = data["zoom_random"]["probability"] , percentage_area = data["zoom_random"]["percentage_area"] , randomise_percentage_area = False)
+				
+				]
+
+			enable1_1 = [
+
+				data["flip_left_right"]["enable"],
+
+				data["flip_random"]["enable"],
+
+				data["flip_top_bottom"]["enable"],
+
+				data["gaussian_distortion"]["enable"],
+
+				data["random_distortion"]["enable"],
+
+				data["random_erasing"]["enable"],
+
+				data["rotate_without_crop"]["enable"],
+
+				data["shear"]["enable"],
+
+				data["skew"]["enable"],
+
+				data["skew_corner"]["enable"],
+
+				data["skew_left_right"]["enable"],
+
+				data["skew_tilt"]["enable"],
+
+				data["skew_top_bottom"]["enable"],
+
+				data["zoom"]["enable"],
+
+				data["zoom_random"]["enable"]
+
+				]
+
+			enable2_2 = [
+
+				data["vignetting"]["enable"],
+
+				data["salt_and_pepper_noise"]["enable"],
+
+				data["color_shift"]["enable"]
+
+				]
+
+			length = enable1_1.count(True) + enable2_2.count(True)
+
+			agu1 = []
+
+			for item , enable in zip(agu1_1 , enable1_1) :
+
+				if enable :
+
+					agu1.append(item)
 	
-		agu1 = [
-			p.flip_left_right(probability = data["flip_left_right"]["probability"]),
-			
-			p.flip_random(probability = data["flip_random"]["probability"]),
-			
-			p.flip_top_bottom(probability = data["flip_top_bottom"]["probability"]), 
-			
-			p.gaussian_distortion(probability = data["gaussian_distortion"]["probability"] , grid_width = data["gaussian_distortion"]["grid_width"] , grid_height = data["gaussian_distortion"]["grid_height"] , magnitude = data["gaussian_distortion"]["magnitude"] , corner= "bell" , method = "in" , mex = 0.5 , mey = 0.5 , sdx = 0.05 , sdy = 0.05) ,
-			
-			p.random_distortion(probability = data["random_distortion"]["probability"]  , grid_width = data["random_distortion"]["grid_width"] , grid_height = data["random_distortion"]["grid_height"] , magnitude = data["random_distortion"]["magnitude"]) ,
-			
-			p.random_erasing (probability = data["random_erasing"]["probability"] , rectangle_area = data["random_erasing"]["rectangle_area"] ) ,
-			
-			p.rotate_without_crop(probability = data["rotate_without_crop"]["probability"] , max_left_rotation = data["rotate_without_crop"]["max_left_rotation"] , max_right_rotation = data["rotate_without_crop"]["max_right_rotation"], expand=False) ,
-			
-			p.shear (probability = data["shear"]["probability"] , max_shear_left = data["shear"]["max_shear_left"] , max_shear_right = data["shear"]["max_shear_right"]) ,
-			
-			p.skew (probability = data["skew"]["probability"] , magnitude = data["skew"]["magnitude"]) ,
-			
-			p.skew_corner (probability = data["skew_corner"]["probability"] , magnitude = data["skew_corner"]["magnitude"]) ,
-			
-			p.skew_left_right (probability = data["skew_left_right"]["probability"] , magnitude = data["skew_left_right"]["magnitude"]) ,
-			
-			p.skew_tilt (probability = data["skew_tilt"]["probability"] , magnitude = data["skew_tilt"]["magnitude"]) ,
-			
-			p.skew_top_bottom (probability = data["skew_top_bottom"]["probability"] , magnitude = data["skew_top_bottom"]["magnitude"] ) ,
-			
-			p.zoom(probability = data["zoom"]["probability"] , min_factor = data["zoom"]["min_factor"] , max_factor = data["zoom"]["max_factor"]) ,
-			
-			p.zoom_random (probability = data["zoom_random"]["probability"] , percentage_area = data["zoom_random"]["percentage_area"] , randomise_percentage_area = False)
-			
-			]
-	
-		agu_index1 = []
-	
-		for i in range(data["no_of_agu"]):
-	
-			agu_index1.append(random.randint(0,17))
-	
-		agu_index1 = sorted(list(set(agu_index1))) 
-	
+		agu_index1 = sorted(random.sample(range(0,length) , data["no_of_agu"]))
+		
 		agu_index2 = []
 	
-		while agu_index1[len(agu_index1) - 1] > 14 :
+		while agu_index1[len(agu_index1) - 1] > (len(agu1)-1) :
 	
-			agu_index2.append(agu_index1.pop() - 15)
+			agu_index2.append(agu_index1.pop() - len(agu1))
 	
 		for i in agu_index1 :
 	
@@ -159,16 +241,27 @@ def agu_img(image , json_file_path ,batch_size ) :
 		
 		batch_images = p.keras_generator(batch_size = 1, scaled = True, image_data_format = u'channels_last')
 		batch_images1, labels = next(batch_images)
-		batch_images1 = batch_images1[0] * 255 #che
+		batch_images1 = batch_images1[0] * 255 
 	
-		agu2 = [
-			vignetting(batch_images1 , probability = data["vignetting"]["probability"] , px = data["vignetting"]["px"] , py = data["vignetting"]["py"]) ,
-			
-			salt_and_pepper_noise(batch_images1 , probability = data["salt_and_pepper_noise"]["probability"] , magnitude = data["salt_and_pepper_noise"]["magnitude"]) ,
-	
-			color_shift(batch_images1 , probability = data["color_shift"]["probability"] , color_shift_range = data["color_shift"]["color_shift_range"])
-			
-			]
+		if first_time :
+
+			agu2_2 = [
+
+				vignetting(batch_images1 , probability = data["vignetting"]["probability"] , px = data["vignetting"]["px"] , py = data["vignetting"]["py"]) ,
+				
+				salt_and_pepper_noise(batch_images1 , probability = data["salt_and_pepper_noise"]["probability"] , magnitude = data["salt_and_pepper_noise"]["magnitude"]) ,
+		
+				color_shift(batch_images1 , probability = data["color_shift"]["probability"] , color_shift_range = data["color_shift"]["color_shift_range"])
+				
+				]
+
+			agu2 = []
+
+			for item , enable in zip(agu2_2 , enable2_2) :
+
+				if enable :
+
+					agu2.append(item)
 		
 		for i in agu_index2 :
 	
@@ -179,8 +272,9 @@ def agu_img(image , json_file_path ,batch_size ) :
 		image = cv2.cvtColor(image , cv2.COLOR_RGB2BGR)
 		
 		processed.append(image)
-	
-	shutil.rmtree(dest, ignore_errors=True)
+
+	shutil.rmtree("./test", ignore_errors=True)
+
 	return processed
 		
 json_file_path = "/home/guru/Desktop/work/projects/image_aug_-filtering/data.json"
@@ -189,6 +283,6 @@ batch_size = 200
 
 processed = agu_img( image , json_file_path ,batch_size )
 
-for i , image in enumerate(processed) :
-
-	cv2.imwrite('./output/img%s.png'%i,image)
+for x , image in enumerate(processed) :
+	
+	cv2.imwrite('./output/img%s.png'%x,image)
