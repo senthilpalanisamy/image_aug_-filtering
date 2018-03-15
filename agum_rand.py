@@ -3,26 +3,21 @@ import Augmentor
 import cv2
 import os
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-import matplotlib.image as mpimg
 import random
 from keras.preprocessing.image import ImageDataGenerator
 from keras import backend as K
 import json
 import shutil
-import itertools
+import time
 
 #Salt and Pepper Noise
 
-def salt_and_pepper_noise(image , probability = 0.5 , magnitude = 0.004):
+def salt_and_pepper_noise(image, probability = 0.5, magnitude = 0.004):
 
 	#generating a random number for checking the probability
 
 	if (probability > random.random()):
 
-		row,col,ch = image.shape
-		
 		#the ratio of salt noise
 
 		s_vs_p = 0.5
@@ -41,7 +36,7 @@ def salt_and_pepper_noise(image , probability = 0.5 , magnitude = 0.004):
 	    
 	    # Pepper mode
 		
-		num_pepper = np.ceil(magnitude * image.size * (1. - s_vs_p))
+		num_pepper = np.ceil(magnitude * image.size * (1 - s_vs_p))
 		
 		coords = [np.random.randint(0, i - 1, int(num_pepper))
 	            for i in image.shape]
@@ -58,7 +53,7 @@ def salt_and_pepper_noise(image , probability = 0.5 , magnitude = 0.004):
 
 #Vignetting
 
-def vignetting(img , probability = 0.5 , px = 0.25 , py = 0.25):
+def vignetting(img, probability = 0.5, px = 0.25, py = 0.25):
 	
 	#generating a random number for checking the probability
 
@@ -69,9 +64,9 @@ def vignetting(img , probability = 0.5 , px = 0.25 , py = 0.25):
 		
 		# generating vignette mask using Gaussian kernels
 		
-		kernel_x = cv2.getGaussianKernel(cols , 200)		
+		kernel_x = cv2.getGaussianKernel(cols, 200)		
 		
-		kernel_y = cv2.getGaussianKernel(rows , rows * py)
+		kernel_y = cv2.getGaussianKernel(rows, rows * py)
 		
 		kernel = kernel_y * kernel_x.T
 		
@@ -83,7 +78,7 @@ def vignetting(img , probability = 0.5 , px = 0.25 , py = 0.25):
 		
 		for i in range(3):
 		
-		    output[:,:,i] = output[:,:,i] * mask
+		    output[:, :, i] = output[:, :, i] * mask
 
 		v_img = output
 
@@ -95,7 +90,7 @@ def vignetting(img , probability = 0.5 , px = 0.25 , py = 0.25):
 
 #Color Shift
 
-def color_shift(img_process , probability = 0.5 , color_shift_range = 50):
+def color_shift(img_process, probability = 0.5, color_shift_range = 50):
 
 	#selecting the required operations in keras lib
 
@@ -106,7 +101,7 @@ def color_shift(img_process , probability = 0.5 , color_shift_range = 50):
 	
 	#expanding the dimension so that the keras lib can process a single image
 	
-	img_process1 = np.expand_dims(img_process , axis = 0)
+	img_process1 = np.expand_dims(img_process, axis = 0)
 
 	#generating a random number for checking the probability
 
@@ -127,7 +122,11 @@ def color_shift(img_process , probability = 0.5 , color_shift_range = 50):
 
 	return images
 
+#Possible Functions
+
 def possible_functions(data) :
+
+	#funcutions that user has enabled
 
 	enables = [
 
@@ -169,6 +168,8 @@ def possible_functions(data) :
 
 		]
 
+	#the probability that the user has specified for each function
+
 	probabilities = [
 
 		data["flip_left_right"]["probability"],
@@ -208,6 +209,8 @@ def possible_functions(data) :
 		data["color_shift"]["probability"]
 
 		]
+
+	#name of all the functions
 
 	functions = [
 		
@@ -253,37 +256,49 @@ def possible_functions(data) :
 
 	probability = []
 
+	#sorting the functions and its probability that user has enabled 
+
 	for item , pro , enable in zip(functions , probabilities , enables):
 
 		if enable :
 
-			possible.append(item)
+			possible.append(item)	#possible Functions
 
-			probability.append(pro)
+			probability.append(pro)	#functions respective probability
+
+	#calculating the total probabilty to 1  
 
 	pro_sum = sum(probability)
 
-	cal_probability = map(lambda x : x / pro_sum , probability)
-
-	return possible , cal_probability
-
-#Functions Selection 
-
-def function_selection(data , image_no):
-
-	p = Augmentor.Pipeline("./test")
-
-	possible , probability = possible_functions(data)
-
-	ran = random.randint(1 , data["no_of_agu"])
+	cal_probability = map(lambda x : x / pro_sum, probability)
 
 	possible = list(possible)
 
-	probability = list(probability)
+	cal_probability = list(cal_probability)
+
+	return possible, cal_probability
+
+#Functions Selection 
+
+def function_selection(data, possible, probability, image_no, localtime):
+
+	#initializing the image to be agumented
+
+	p = Augmentor.Pipeline("./%s"%localtime)
+
+	#random selection of number of agumentation to be performed with in specified limit 
+
+	ran = random.randint(1 , data["no_of_agu"])	
+
+	#selecting the functions randomly based on the given probability
 
 	sel_fun = np.random.choice(possible , ran , replace = False , p = probability)
 
+	#performing the selected functions
+
 	names = [image_no]
+
+	#performing the augmentor lib functions
 
 	if "flip_left_right" in sel_fun :
 
@@ -375,29 +390,37 @@ def function_selection(data , image_no):
 
 		names.append("z_r")
 
+	#converting the image to useable formate for other lib
+
 	batch_images = p.keras_generator(batch_size = 1, scaled = True, image_data_format = u'channels_last')
 	
 	batch_images1, labels = next(batch_images)
 	
-	batch_images1 = batch_images1[0] * 255 
+	batch_images1 = batch_images1[0] * 255
+
+	#functions of the cv lib are performed
 
 	if "vignetting" in sel_fun :
 
 		batch_images1 = vignetting(batch_images1 , probability = 1 , px = data["vignetting"]["px"] , py = data["vignetting"]["py"])
 
 		names.append("v")
-		
+
 	if "salt_and_pepper_noise" in sel_fun :
 
 		batch_images1 = salt_and_pepper_noise(batch_images1 , probability = 1 , magnitude = data["salt_and_pepper_noise"]["magnitude"])
 
 		names.append("s_a_p_n")
 
+	#functions of the keras lib is performed
+
 	if "color_shift" in sel_fun :
 
 		batch_images1 = color_shift(batch_images1 , probability = 1 , color_shift_range = data["color_shift"]["color_shift_range"])
 
 		names.append("c_s")
+
+	#converting image into wirtable formate
 
 	image = np.array(batch_images1, dtype= 'uint8')
 
@@ -407,37 +430,47 @@ def function_selection(data , image_no):
 
 	return image , name
 
-def agu_img(image , json_file_path , batch_size = 100 ,image_no = "1") :
+#Agumenting single image
 
-	if not os.path.isdir("./test"):
+def agu_img(image, data , batch_size = 100 ,image_no = "1"):
 
-		os.mkdir("./test")
+	#creating a temaporary directory and saving the image there so to be used by agumentor
 
-	cv2.imwrite("./test/image.png" , image)	
+	localtime = "_".join(time.asctime( time.localtime(time.time())).split(" "))
+	
+	os.mkdir("./%s"%localtime)
 
-	with open(json_file_path,'r') as json_file:
-		
-		data = json.load(json_file)
-		
-		json_file.close()
+	cv2.imwrite("./%s/image.png"%localtime , image)
 
 	processed = []
 	
 	names =[]
 
+	#calling the possible functions to get the enabled functions with its probability
+
+	possible , probability = possible_functions(data)
+
+	#iterating the functions so that to agument a image in different ways
+
 	for x in range(batch_size):
 
-		image , name = function_selection(data , image_no)
+		image , name = function_selection(data , possible, probability, image_no, localtime)
 
 		names.append(name)
 		
 		processed.append(image)
 
-	shutil.rmtree("./test", ignore_errors=True)
+	#deleting the temparory folder created
 
-	return processed ,names 	#nm ch
+	shutil.rmtree("./%s"%localtime, ignore_errors=True)
 
-def agu_mul_img(images , json_file_path , total_batch_size) :
+	return processed ,names
+
+#Agumenting multiple images
+
+def agu_mul_img(images , data , total_batch_size) :
+
+	#calculating batch size for each image
 
 	com = total_batch_size // len(images)
 	
@@ -455,9 +488,11 @@ def agu_mul_img(images , json_file_path , total_batch_size) :
 
 	image_no = 1
 
-	for image , batch_size in zip(images , batch_sizes):
+	#calling the single image agumentation for each image
 
-		processed , names = agu_img( image , json_file_path ,batch_size , image_no = str(image_no))
+	for image , batch_size in zip(images , batch_sizes):
+		
+		processed , names = agu_img( image , data ,batch_size , image_no = "__".join(["img" , str(image_no)]))
 
 		image_no = image_no + 1
 
@@ -468,39 +503,73 @@ def agu_mul_img(images , json_file_path , total_batch_size) :
 	processed_img = [img for batch in batch_images for img in batch]
 
 	processed_nam = [nam for batch in batch_names for nam in batch]
-
+	
 	return processed_img , processed_nam
 
-json_file_path = "./data.json"
+#test function for single image agumentation
 
-'''
-batch_size = 200
+def test_single_image_agu ():
 
-img = "./download.jpeg"
-
-image = cv2.imread(img)
-
-processed , names = agu_img( image , json_file_path ,batch_size ) #nm ch
-
-for x , image in enumerate(processed) :
+	json_file_path = "./data.json"
 	
-	cv2.imwrite('./output/%s%s.png'%(x , names[x]),image)
-'''
+	batch_size = 200
+	
+	img = "./images/img1.jpeg"
+	
+	image = cv2.imread(img)
 
-dir_path = "./images"
+	#open the json file and and storing the data
 
-path_images = [os.path.join(dir_path , f) for f in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path , f))]
+	with open(json_file_path,'r') as json_file:
+		
+		data = json.load(json_file)
+		
+		json_file.close()
+	
+	processed , names = agu_img( image , data ,batch_size )
 
-total_batch_size = 200
+	if not os.path.isdir("./output"):
 
-images = []
+		os.mkdir("./output")
+	
+	for x , image  in enumerate(processed) :
 
-for path in path_images :
+		cv2.imwrite('./output/%s__%s.png'%(names[x] , x) , image)
 
-	images.append(cv2.imread(path))
+#test function for multiple image agumentation
+	
+def test_mul_image_agu():
 
-batch_images , batch_names = agu_mul_img(images , json_file_path , total_batch_size)
+	json_file_path = "./data.json"
 
-for x , image  in enumerate(batch_images) :
+	dir_path = "./images"
+	
+	path_images = [os.path.join(dir_path , f) for f in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path , f))]
+	
+	total_batch_size = 200
+	
+	images = []
 
-	cv2.imwrite('./output/img%s__%s.png'%(batch_names[x] , x) , image)
+	#open the json file and and storing the data
+
+	with open(json_file_path,'r') as json_file:
+		
+		data = json.load(json_file)
+		
+		json_file.close()
+	
+	for path in path_images :
+	
+		images.append(cv2.imread(path))
+	
+	batch_images , batch_names = agu_mul_img(images , data , total_batch_size)
+
+	if not os.path.isdir("./output"):
+
+		os.mkdir("./output")
+	
+	for x , image  in enumerate(batch_images) :
+	
+		cv2.imwrite('./output/%s__%s.png'%(batch_names[x] , x) , image)
+
+test_single_image_agu()
