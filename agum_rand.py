@@ -160,7 +160,7 @@ def possible_functions(data):
   	if enable:
   	  possible.append(item)		#possible Functions
   	  probability.append(pro)	#functions respective probability
-  	#calculating the total probabilty to 1
+  #calculating the total probabilty to 1
   pro_sum = sum(probability)
   cal_probability = map(lambda x: x/pro_sum, probability)
   possible = list(possible)
@@ -383,4 +383,4 @@ def test_mul_image_agu():
   	cv2.imwrite('./output/%s__%s.png'%(batch_names[x], x), image)
   
 
-test_mul_image_agu()
+#test_mul_image_agu()
