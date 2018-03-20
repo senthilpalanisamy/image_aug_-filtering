@@ -92,45 +92,45 @@ def possible_functions(data):
   '''
   #funcutions that user has enabled
   enables = [
-            data["flip_left_right"]["enable"],
-            data["flip_random"]["enable"],
-            data["flip_top_bottom"]["enable"],
-            data["gaussian_distortion"]["enable"],
-            data["random_distortion"]["enable"],
-            data["random_erasing"]["enable"],
-            data["rotate_without_crop"]["enable"],
-            data["shear"]["enable"],
-            data["skew"]["enable"],
-            data["skew_corner"]["enable"],
-            data["skew_left_right"]["enable"],
-            data["skew_tilt"]["enable"],
-            data["skew_top_bottom"]["enable"],
-            data["zoom"]["enable"],
-            data["zoom_random"]["enable"],
-            data["vignetting"]["enable"],
-            data["salt_and_pepper_noise"]["enable"],
-            data["color_shift"]["enable"]
+            data["params"]["flip_left_right"]["enable"]["value"][0],
+            data["params"]["flip_random"]["enable"]["value"][0],
+            data["params"]["flip_top_bottom"]["enable"]["value"][0],
+            data["params"]["gaussian_distortion"]["enable"]["value"][0],
+            data["params"]["random_distortion"]["enable"]["value"][0],
+            data["params"]["random_erasing"]["enable"]["value"][0],
+            data["params"]["rotate_without_crop"]["enable"]["value"][0],
+            data["params"]["shear"]["enable"]["value"][0],
+            data["params"]["skew"]["enable"]["value"][0],
+            data["params"]["skew_corner"]["enable"]["value"][0],
+            data["params"]["skew_left_right"]["enable"]["value"][0],
+            data["params"]["skew_tilt"]["enable"]["value"][0],
+            data["params"]["skew_top_bottom"]["enable"]["value"][0],
+            data["params"]["zoom"]["enable"]["value"][0],
+            data["params"]["zoom_random"]["enable"]["value"][0],
+            data["params"]["vignetting"]["enable"]["value"][0],
+            data["params"]["salt_and_pepper_noise"]["enable"]["value"][0],
+            data["params"]["color_shift"]["enable"]["value"][0]
             ]
   #the probability that the user has specified for each function
   probabilities = [
-                  data["flip_left_right"]["probability"],
-                  data["flip_random"]["probability"],
-                  data["flip_top_bottom"]["probability"],
-                  data["gaussian_distortion"]["probability"],
-                  data["random_distortion"]["probability"],
-                  data["random_erasing"]["probability"],
-                  data["rotate_without_crop"]["probability"],
-                  data["shear"]["probability"],
-                  data["skew"]["probability"],
-                  data["skew_corner"]["probability"],
-                  data["skew_left_right"]["probability"],
-                  data["skew_tilt"]["probability"],
-                  data["skew_top_bottom"]["probability"],
-                  data["zoom"]["probability"],
-                  data["zoom_random"]["probability"],
-                  data["vignetting"]["probability"],
-                  data["salt_and_pepper_noise"]["probability"],
-                  data["color_shift"]["probability"]
+                  data["params"]["flip_left_right"]["probability"]["value"][0],
+                  data["params"]["flip_random"]["probability"]["value"][0],
+                  data["params"]["flip_top_bottom"]["probability"]["value"][0],
+                  data["params"]["gaussian_distortion"]["probability"]["value"][0],
+                  data["params"]["random_distortion"]["probability"]["value"][0],
+                  data["params"]["random_erasing"]["probability"]["value"][0],
+                  data["params"]["rotate_without_crop"]["probability"]["value"][0],
+                  data["params"]["shear"]["probability"]["value"][0],
+                  data["params"]["skew"]["probability"]["value"][0],
+                  data["params"]["skew_corner"]["probability"]["value"][0],
+                  data["params"]["skew_left_right"]["probability"]["value"][0],
+                  data["params"]["skew_tilt"]["probability"]["value"][0],
+                  data["params"]["skew_top_bottom"]["probability"]["value"][0],
+                  data["params"]["zoom"]["probability"]["value"][0],
+                  data["params"]["zoom_random"]["probability"]["value"][0],
+                  data["params"]["vignetting"]["probability"]["value"][0],
+                  data["params"]["salt_and_pepper_noise"]["probability"]["value"][0],
+                  data["params"]["color_shift"]["probability"]["value"][0]
                   ]
   #name of all the functions
   functions = [
@@ -177,7 +177,7 @@ def function_selection(data, possible, probability, image_no, localtime):
   #initializing the image to be agumented
   p = Augmentor.Pipeline("./%s"%localtime)
   #random selection of number of agumentation to be performed with in specified limit
-  ran = random.randint(1, data["no_of_agu"])
+  ran = random.randint(1, data["general"]["no_of_agu"]["value"][0])
   #selecting the functions randomly based on the given probability
   sel_fun = np.random.choice(possible, ran, replace=False, p=probability)
   #performing the selected functions
@@ -194,66 +194,66 @@ def function_selection(data, possible, probability, image_no, localtime):
   	names.append("f_t_b")
   if "gaussian_distortion" in sel_fun:
   	p.gaussian_distortion(probability=1,
-  		                  grid_width=data["gaussian_distortion"]["grid_width"],
-  		                  grid_height=data["gaussian_distortion"]["grid_height"],
-  		                  magnitude=data["gaussian_distortion"]["magnitude"],
+  		                  grid_width=data["params"]["gaussian_distortion"]["grid_width"]["value"][0],
+  		                  grid_height=data["params"]["gaussian_distortion"]["grid_height"]["value"][0],
+  		                  magnitude=data["params"]["gaussian_distortion"]["magnitude"]["value"][0],
   		                  corner="bell", method="in", mex=0.5, mey=0.5,
   		                  sdx=0.05, sdy=0.05
   		                  )
   	names.append("g_d")
   if "random_distortion" in sel_fun:
   	p.random_distortion(probability=1,
-  		                grid_width=data["random_distortion"]["grid_width"],
-  		                grid_height=data["random_distortion"]["grid_height"],
-  		                magnitude=data["random_distortion"]["magnitude"]
+  		                grid_width=data["params"]["random_distortion"]["grid_width"]["value"][0],
+  		                grid_height=data["params"]["random_distortion"]["grid_height"]["value"][0],
+  		                magnitude=data["params"]["random_distortion"]["magnitude"]["value"][0]
   		                )
   	names.append("r_d")
   if "random_erasing" in sel_fun:
   	p.random_erasing(probability=1,
-  		             rectangle_area=data["random_erasing"]["rectangle_area"]
+  		             rectangle_area=data["params"]["random_erasing"]["rectangle_area"]["value"][0]
   		             )
   	names.append("r_e")
   if "rotate_without_crop" in sel_fun:
   	p.rotate_without_crop(probability=1,
-  		                  max_left_rotation=data["rotate_without_crop"]["max_left_rotation"],
-  		                  max_right_rotation=data["rotate_without_crop"]["max_right_rotation"],
+  		                  max_left_rotation=data["params"]["rotate_without_crop"]["max_left_rotation"]["value"][0],
+  		                  max_right_rotation=data["params"]["rotate_without_crop"]["max_right_rotation"]["value"][0],
   		                  expand=False
   		                  )
   	names.append("r_w_c")
   if "shear" in sel_fun:
   	p.shear(probability=1,
-  		    max_shear_left=data["shear"]["max_shear_left"],
-  		    max_shear_right = data["shear"]["max_shear_right"]
+  		    max_shear_left=data["params"]["shear"]["max_shear_left"]["value"][0],
+  		    max_shear_right = data["params"]["shear"]["max_shear_right"]["value"][0]
   		    )
   	names.append("sh")
   if "skew" in sel_fun:
-  	p.skew(probability=1, magnitude=data["skew"]["magnitude"])
+  	p.skew(probability=1, magnitude=data["params"]["skew"]["magnitude"]["value"][0])
   	names.append("sk")
   if "skew_corner" in sel_fun:
-  	p.skew_corner(probability=1, magnitude=data["skew_corner"]["magnitude"])
+  	p.skew_corner(probability=1, magnitude=data["params"]["skew_corner"]["magnitude"]["value"][0])
   	names.append("sk_c")
   if "skew_left_right" in sel_fun:
   	p.skew_left_right(probability=1,
-  		              magnitude=data["skew_left_right"]["magnitude"]
+  		              magnitude=data["params"]["skew_left_right"]["magnitude"]["value"][0]
   		              )
   	names.append("sk_l_r")
   if "skew_tilt" in sel_fun:
-  	p.skew_tilt(probability=1, magnitude=data["skew_tilt"]["magnitude"])
+  	p.skew_tilt(probability=1, magnitude=data["params"]["skew_tilt"]["magnitude"]["value"][0])
   	names.append("sk_t")
   if "skew_top_bottom" in sel_fun:
   	p.skew_top_bottom(probability=1,
-  		              magnitude=data["skew_top_bottom"]["magnitude"]
+  		              magnitude=data["params"]["skew_top_bottom"]["magnitude"]["value"][0]
   		              )
   	names.append("sk_t_b")
   if "zoom" in sel_fun:
   	p.zoom(probability=1,
-  		   min_factor=data["zoom"]["min_factor"],
-  		   max_factor = data["zoom"]["max_factor"]
+  		   min_factor=data["params"]["zoom"]["min_factor"]["value"][0],
+  		   max_factor = data["params"]["zoom"]["max_factor"]["value"][0]
   		   )
   	names.append("z")
   if "zoom_random" in sel_fun:
   	p.zoom_random(probability=1,
-  		          percentage_area=data["zoom_random"]["percentage_area"],
+  		          percentage_area=data["params"]["zoom_random"]["percentage_area"]["value"][0],
   		          randomise_percentage_area=False
   		          )
   	names.append("z_r")
@@ -266,19 +266,19 @@ def function_selection(data, possible, probability, image_no, localtime):
   #functions of the cv lib are performed
   if "vignetting" in sel_fun:
   	batch_images1 = vignetting(batch_images1, probability=1,
-  		                       px=data["vignetting"]["px"],
-  		                       py=data["vignetting"]["py"]
+  		                       px=data["params"]["vignetting"]["px"]["value"][0],
+  		                       py=data["params"]["vignetting"]["py"]["value"][0]
   		                       )
   	names.append("v")
   if "salt_and_pepper_noise" in sel_fun:
   	batch_images1=salt_and_pepper_noise(batch_images1, probability=1,
-  	                                    magnitude=data["salt_and_pepper_noise"]["magnitude"]
+  	                                    magnitude=data["params"]["salt_and_pepper_noise"]["magnitude"]["value"][0]
   	                                    )
   	names.append("s_a_p_n")
   #functions of the keras lib is performed
   if "color_shift" in sel_fun:
   	batch_images1 = color_shift(batch_images1, probability=1,
-  	                            color_shift_range=data["color_shift"]["color_shift_range"]
+  	                            color_shift_range=data["params"]["color_shift"]["magnitude"]["value"][0]
   	                            )
   	names.append("c_s")
   #converting image into wirtable formate
@@ -345,7 +345,7 @@ def test_single_image_agu ():
   '''
   test function for single image agumentation
   '''
-  json_file_path = "./data.json"
+  json_file_path = "./config_agum.json"
   batch_size = 200
   img = "./images/img1.jpeg"
   image = cv2.imread(img)
@@ -364,7 +364,7 @@ def test_mul_image_agu():
   '''
   test function for multiple image agumentation
   '''
-  json_file_path = "./data.json"
+  json_file_path = "./config_agum.json"
   dir_path = "./images"
   path_images = [os.path.join(dir_path, f) for f in os.listdir(dir_path)
                  if os.path.isfile(os.path.join(dir_path, f))]
@@ -384,3 +384,4 @@ def test_mul_image_agu():
   
 
 #test_mul_image_agu()
+#test_single_image_agu()
